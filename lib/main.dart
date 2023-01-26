@@ -22,8 +22,14 @@ class MyApp extends StatelessWidget {
           ChangeNotifierProvider(
             create: (ctx) => AuthManager(),
           ),
-          ChangeNotifierProvider(
+          ChangeNotifierProxyProvider<AuthManager, ProductsManager>(
             create: (ctx) => ProductsManager(),
+            update: (ctx, authManager, productsManager) {
+              // Khi authManager có báo hiệu thay đổi thì đọc lại authToken
+              // cho productManager
+              productsManager!.authToken = authManager.authToken;
+              return productsManager;
+            },
           ),
           ChangeNotifierProvider(
             create: (ctx) => CartManager(),
@@ -47,19 +53,21 @@ class MyApp extends StatelessWidget {
                 ),
               ),
               home: authManager.isAuth
-              ? const ProductsOverviewScreen()
-              : FutureBuilder(
-                future: authManager.tryAutoLogin(),
-                builder: (ctx, snapshot){
-                  return snapshot.connectionState == ConnectionState.waiting
-                    ? const SplashScreen()
-                    : const AuthScreen();
-                },
-              ),
+                  ? const ProductsOverviewScreen()
+                  : FutureBuilder(
+                      future: authManager.tryAutoLogin(),
+                      builder: (ctx, snapshot) {
+                        return snapshot.connectionState ==
+                                ConnectionState.waiting
+                            ? const SplashScreen()
+                            : const AuthScreen();
+                      },
+                    ),
               routes: {
                 CartScreen.routeName: (ctx) => const CartScreen(),
                 OrdersScreen.routeName: (ctx) => const OrdersScreen(),
-                UserProductsScreen.routeName: (ctx) => const UserProductsScreen(),
+                UserProductsScreen.routeName: (ctx) =>
+                    const UserProductsScreen(),
               },
               onGenerateRoute: (settings) {
                 if (settings.name == ProductDetailScreen.routeName) {
@@ -88,9 +96,8 @@ class MyApp extends StatelessWidget {
 
                 return null;
               },
-          );
-        },
-      )
-    );
+            );
+          },
+        ));
   }
 }
